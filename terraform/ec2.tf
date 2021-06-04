@@ -1,31 +1,17 @@
-resource "aws_instance" "instance" {
-  ami           = data.aws_ami.latest-ubuntu.id
-  instance_type = var.instance_type
+module "ec2" {
+  source = "./blueprints/ec2/"
 
-  tags = local.tags.instance
+  environment = local.environment
 
-  key_name               = var.keypair_name
-  vpc_security_group_ids = [aws_security_group.sg_instance.id]
-  user_data              = data.template_file.user_data.rendered
-  subnet_id              = var.subnet_id
+  instance_name        = "kafka-deltalake"
+  instance_type        = "t2.micro"
+  keypair_name         = var.instances_params.kafka_delta.keypair_name
+  subnet_id            = var.instances_params.kafka_delta.subnet_id
+  vpc_id               = var.instances_params.kafka_delta.vpc_id
+  volume_size          = "50"
+  volume_type          = "gp2"
 
-  root_block_device {
-    volume_size = var.volume_size
-    volume_type = var.volume_type
-  }
-}
-
-data "aws_ami" "latest-ubuntu" {
-  most_recent = true
-  owners      = ["099720109477"] # Canonical
-
-  filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-*"]
-  }
-
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
+  bucket_artifacts = module.buckets.buckets.configs
+  bucket_raw       = module.buckets.buckets.raw
+  
 }
